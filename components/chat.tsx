@@ -4,7 +4,7 @@ import { Avatar } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Bot, Send, User } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { HotelRooms } from "./hotel-rooms"
 import { AuthorizationRequest } from "./authorization-request"
 import { LoyaltyPoints } from "./loyalty-points"
@@ -12,11 +12,15 @@ import { Payment } from "./payment"
 import { getAuthState, clearAuthState } from "@/utils/auth-helper"
 import { Calendar } from "./calendar"
 import { BookingDetails } from "./booking-details"
+import { signOut } from "next-auth/react"
+import { UpgradeRoom } from "./upgrade-room"
+import { ScheduleTask } from "./schedule-task"
+import { BotLoader } from "./bot-loader"
 
 interface Message {
   role: "user" | "assistant"
   content: string
-  type?: "rooms" | "auth" | "loyalty" | "payment" | "calendar" | "booking-details"
+  type?: "rooms" | "auth" | "loyalty" | "payment" | "calendar" | "booking-details" | "upgrade-room" | "schedule-task"
 }
 
 const botResponses = [
@@ -29,8 +33,7 @@ const botResponses = [
 
 const sampleQueries = [
   "I like to book a room",
-  "Show me available rooms",
-  "What rooms do you have?"
+  "I want to upgrade my room to Deluxe",
 ]
 
 export function Chat() {
@@ -47,6 +50,33 @@ export function Chat() {
   const [showPayment, setShowPayment] = useState(false)
   const [selectedRoom, setSelectedRoom] = useState<string>("")
   const [showCalendar, setShowCalendar] = useState(false)
+  const [calendarLoading, setCalendarLoading] = useState(false)
+  const [showUpgrade, setShowUpgrade] = useState(false)
+  const [showScheduleTask, setShowScheduleTask] = useState(false)
+  const [isProcessingBooking, setIsProcessingBooking] = useState(false);
+  const [isProcessingAuth, setIsProcessingAuth] = useState(false);
+  const [isProcessingLoyalty, setIsProcessingLoyalty] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [isProcessingSchedule, setIsProcessingSchedule] = useState(false);
+  const [isFetchingRooms, setIsFetchingRooms] = useState(false);
+  const [isProcessingPaymentSubmit, setIsProcessingPaymentSubmit] = useState(false);
+  
+  // Add ref for chat container
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  // Add scroll to bottom effect
+  const scrollToBottom = () => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  };
+
+  // Update messages effect to scroll
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isProcessingBooking, isProcessingAuth, isProcessingLoyalty, 
+      isProcessingPayment, calendarLoading, isProcessingSchedule, isFetchingRooms,
+      isProcessingPaymentSubmit]);
 
   // Check for returning from auth
   useEffect(() => {
@@ -102,6 +132,19 @@ export function Chat() {
         return
       }
 
+      if (lowerInput.includes("upgrade") || lowerInput.includes("update the room")) {
+        setShowScheduleTask(true);
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          {
+            role: "assistant",
+            content: "I can help you with room upgrades by scheduling a task to check availability.",
+            type: "schedule-task"
+          },
+        ]);
+        return;
+      }
+
       // Default response if no specific command is matched
       const randomBotResponse: Message = {
         role: "assistant",
@@ -112,8 +155,7 @@ export function Chat() {
   }
 
   const handleSampleQuery = (query: string) => {
-    setInput(query)
-    // Simulate form submission with the selected query
+    setInput("");  // Clear input immediately
     const userMessage: Message = { role: "user", content: query }
     setMessages((prevMessages) => [...prevMessages, userMessage])
 
@@ -128,69 +170,159 @@ export function Chat() {
             type: "booking-details"
           },
         ])
+      } else if (lowerInput.includes("upgrade")) {
+        setShowScheduleTask(true);
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          {
+            role: "assistant",
+            content: "I can help you with room upgrades by scheduling a task to check availability.",
+            type: "schedule-task"
+          },
+        ]);
       }
-      // ...rest of your handleSubmit logic...
     }, 1000)
   }
 
   const handleBooking = (roomType: string) => {
-    setSelectedRoom(roomType)
-    setShowAuth(true)
-    setMessages((prevMessages) => [
-      ...prevMessages,
-      {
-        role: "assistant",
-        content: `Great! You've selected the ${roomType}. Please authorize the booking.`,
-        type: "auth",
-      },
-    ])
-  }
+    setIsProcessingBooking(true);
+    setTimeout(() => {
+      setIsProcessingBooking(false);
+      setSelectedRoom(roomType);
+      setShowAuth(true);
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        {
+          role: "assistant",
+          content: `Great! You've selected the ${roomType}. Please authorize the booking.`,
+          type: "auth",
+        },
+      ]);
+    }, 1500);
+  };
 
   const handleAuthorization = () => {
-    setShowAuth(false)
-    setShowLoyalty(true)
-    setMessages((prevMessages) => [
-      ...prevMessages,
-      {
-        role: "assistant",
-        content: `Perfect! Your ${selectedRoom} booking is authorized. Would you like to apply loyalty points to your booking?`,
-        type: "loyalty",
-      },
-    ])
-  }
+    setIsProcessingAuth(true);
+    setTimeout(() => {
+      setIsProcessingAuth(false);
+      setShowAuth(false);
+      setShowLoyalty(true);
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        {
+          role: "assistant",
+          content: `Perfect! Your ${selectedRoom} booking is authorized. Would you like to apply loyalty points to your booking?`,
+          type: "loyalty",
+        },
+      ])
+    }, 2000);
+  };
 
   const handleApplyPoints = () => {
-    setShowLoyalty(false)
-    setShowPayment(true)
-    setMessages((prevMessages) => [
-      ...prevMessages,
-      {
-        role: "assistant",
-        content: "Loyalty points applied! Please proceed with payment.",
-        type: "payment",
-      },
-    ])
-  }
+    setIsProcessingLoyalty(true);
+    setTimeout(() => {
+      setIsProcessingLoyalty(false);
+      setShowLoyalty(false);
+      setShowPayment(true);
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        {
+          role: "assistant",
+          content: "Loyalty points applied! Please proceed with payment.",
+          type: "payment",
+        },
+      ])
+    }, 1500);
+  };
 
   const handlePaymentComplete = () => {
-    setShowPayment(false)
-    setShowCalendar(true)
+    setIsProcessingPaymentSubmit(true);
+    setTimeout(() => {
+      setIsProcessingPaymentSubmit(false);
+      setShowPayment(false);
+      setShowCalendar(true);
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        {
+          role: "assistant",
+          content: "Your reservation is confirmed. Would you like to add it to your calendar?",
+          type: "calendar",
+        },
+      ]);
+    }, 2000);
+  };
+
+  const handleUpgradeConfirm = () => {
+    setShowUpgrade(false);
     setMessages((prevMessages) => [
       ...prevMessages,
       {
         role: "assistant",
-        content: "Your reservation is confirmed. Would you like to add it to your calendar?",
-        type: "calendar",
+        content: "Your room has been upgraded to Deluxe. Thank you!",
       },
-    ])
-  }
+    ]);
+  };
+
+  const handleUpgradeCancel = () => {
+    setShowUpgrade(false);
+    setMessages((prevMessages) => [
+      ...prevMessages,
+      {
+        role: "assistant",
+        content: "Understood. No upgrade has been processed.",
+      },
+    ]);
+  };
+
+  const handleScheduleConfirm = () => {
+    setIsProcessingSchedule(true);
+    setTimeout(() => {
+      setIsProcessingSchedule(false);
+      setShowScheduleTask(false);
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        {
+          role: "assistant",
+          content: "Task scheduled! I'll notify you when a better room becomes available. You can continue with your current booking meanwhile.",
+        },
+      ]);
+    }, 2000);
+  };
+
+  const handleScheduleCancel = () => {
+    setShowScheduleTask(false);
+    setMessages((prevMessages) => [
+      ...prevMessages,
+      {
+        role: "assistant",
+        content: "Understood. Let me know if you need anything else.",
+      },
+    ]);
+  };
+
+  const handleBookingDetailsSubmit = () => {
+    setIsFetchingRooms(true);
+    setTimeout(() => {
+      setIsFetchingRooms(false);
+      setShowRooms(true);
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { 
+          role: "assistant", 
+          content: "Here are our available rooms:", 
+          type: "rooms" 
+        },
+      ]);
+    }, 2000);
+  };
 
   return (
     <div className="flex flex-col h-screen">
-      <div className="flex justify-between items-center p-4 border-b">
+      <div className="flex justify-end items-center p-4 border-b gap-2">
         <Button onClick={handleClearChat}>Clear Chat</Button>
+        <Button onClick={() => signOut()}>Logout</Button>
       </div>
-      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+      <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 space-y-6">
         {messages.map((message, i) => (
           <div key={i} className={`flex flex-col space-y-2 ${message.role === "user" ? "items-end" : "items-start"}`}>
             <div className={`flex items-start gap-3 ${message.role === "user" ? "flex-row-reverse" : ""}`}>
@@ -212,27 +344,66 @@ export function Chat() {
                 )}
                 {message.type === "loyalty" && showLoyalty && <LoyaltyPoints onApplyPoints={handleApplyPoints} />}
                 {message.type === "payment" && showPayment && <Payment onPaymentComplete={handlePaymentComplete} />}
-                {message.type === "calendar" && showCalendar && <Calendar onAdd={() => {/* ... */}} onSkip={() => setShowCalendar(false)} />}
+                {message.type === "calendar" && showCalendar && !calendarLoading && (
+                  <Calendar
+                    onAdd={() => {
+                      setCalendarLoading(true);
+                      setTimeout(() => {
+                        setCalendarLoading(false);
+                        setShowCalendar(false);
+                      }, 1500);
+                    }}
+                    onSkip={() => setShowCalendar(false)}
+                  />
+                )}
+                {message.type === "calendar" && showCalendar && calendarLoading && (
+                  <div className="flex items-center justify-center py-4">
+                    <span>Adding to calendar...</span>
+                  </div>
+                )}
                 {message.type === "booking-details" && (
-                  <BookingDetails onContinue={() => {
-                    setShowRooms(true)
-                    setMessages((prevMessages) => [
-                      ...prevMessages,
-                      { 
-                        role: "assistant", 
-                        content: "Here are our available rooms:", 
-                        type: "rooms" 
-                      },
-                    ])
-                  }} />
+                  <BookingDetails onContinue={handleBookingDetailsSubmit} />
+                )}
+                {message.type === "upgrade-room" && showUpgrade && (
+                  <UpgradeRoom onConfirm={handleUpgradeConfirm} onCancel={handleUpgradeCancel} />
+                )}
+                {message.type === "schedule-task" && showScheduleTask && (
+                  <ScheduleTask 
+                    onConfirm={handleScheduleConfirm} 
+                    onCancel={handleScheduleCancel}
+                  />
                 )}
               </div>
             </div>
           </div>
         ))}
+        {isProcessingBooking && (
+          <BotLoader message="Processing your room selection..." />
+        )}
+        {isProcessingAuth && (
+          <BotLoader message="Verifying your authorization..." />
+        )}
+        {isProcessingLoyalty && (
+          <BotLoader message="Applying loyalty points..." />
+        )}
+        {isProcessingPayment && (
+          <BotLoader message="Processing payment..." />
+        )}
+        {calendarLoading && (
+          <BotLoader message="Adding to your calendar..." />
+        )}
+        {isProcessingSchedule && (
+          <BotLoader message="Scheduling upgrade check..." />
+        )}
+        {isFetchingRooms && (
+          <BotLoader message="Fetching available rooms..." />
+        )}
+        {isProcessingPaymentSubmit && (
+          <BotLoader message="Processing your payment..." />
+        )}
       </div>
-      <div className="border-t p-4">
-        <div className="flex gap-2 mb-2">
+      <div className="border-t p-6">
+        <div className="flex gap-2 mb-6">
           {sampleQueries.map((query) => (
             <Button
               key={query}

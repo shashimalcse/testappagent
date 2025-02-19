@@ -8,8 +8,7 @@ import { Bot, Send, User } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { HotelRooms } from "./hotel-rooms"
 import { AuthorizationRequest } from "./authorization-request"
-import { LoyaltyPoints } from "./loyalty-points"
-import { Payment } from "./payment"
+import { PaymentWithLoyalty } from "./payment-with-loyalty"
 import { getAuthState, clearAuthState } from "@/utils/auth-helper"
 import { Calendar } from "./calendar"
 import { BookingDetails } from "./booking-details"
@@ -21,7 +20,7 @@ import { BotLoader } from "./bot-loader"
 interface Message {
   role: "user" | "assistant"
   content: string
-  type?: "rooms" | "auth" | "loyalty" | "payment" | "calendar" | "booking-details" | "upgrade-room" | "schedule-task"
+  type?: "rooms" | "auth" | "payment-with-loyalty" | "calendar" | "booking-details" | "upgrade-room" | "schedule-task"
 }
 
 const botResponses = [
@@ -47,7 +46,6 @@ export function Chat() {
   const [input, setInput] = useState("")
   const [showRooms, setShowRooms] = useState(false)
   const [showAuth, setShowAuth] = useState(false)
-  const [showLoyalty, setShowLoyalty] = useState(false)
   const [showPayment, setShowPayment] = useState(false)
   const [selectedRoom, setSelectedRoom] = useState<string>("")
   const [showCalendar, setShowCalendar] = useState(false)
@@ -56,7 +54,6 @@ export function Chat() {
   const [showScheduleTask, setShowScheduleTask] = useState(false)
   const [isProcessingBooking, setIsProcessingBooking] = useState(false);
   const [isProcessingAuth, setIsProcessingAuth] = useState(false);
-  const [isProcessingLoyalty, setIsProcessingLoyalty] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [isProcessingSchedule, setIsProcessingSchedule] = useState(false);
   const [isFetchingRooms, setIsFetchingRooms] = useState(false);
@@ -75,9 +72,7 @@ export function Chat() {
   // Update messages effect to scroll
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isProcessingBooking, isProcessingAuth, isProcessingLoyalty, 
-      isProcessingPayment, calendarLoading, isProcessingSchedule, isFetchingRooms,
-      isProcessingPaymentSubmit]);
+  }, [messages, isProcessingBooking, isProcessingAuth, isProcessingPayment, calendarLoading, isProcessingSchedule, isFetchingRooms, isProcessingPaymentSubmit]);
 
   // Check for returning from auth
   useEffect(() => {
@@ -207,36 +202,19 @@ export function Chat() {
     setTimeout(() => {
       setIsProcessingAuth(false);
       setShowAuth(false);
-      setShowLoyalty(true);
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        {
-          role: "assistant",
-          content: `Perfect! Your ${selectedRoom} booking is authorized. Would you like to apply loyalty points to your booking?`,
-          type: "loyalty",
-        },
-      ])
-    }, 2000);
-  };
-
-  const handleApplyPoints = () => {
-    setIsProcessingLoyalty(true);
-    setTimeout(() => {
-      setIsProcessingLoyalty(false);
-      setShowLoyalty(false);
       setShowPayment(true);
       setMessages((prevMessages) => [
         ...prevMessages,
         {
           role: "assistant",
-          content: "Loyalty points applied! Please proceed with payment.",
-          type: "payment",
+          content: "Your booking is authorized. Please proceed with payment:",
+          type: "payment-with-loyalty",
         },
       ])
-    }, 1500);
+    }, 2000);
   };
 
-  const handlePaymentComplete = () => {
+  const handlePaymentComplete = (usedLoyaltyPoints: boolean) => {
     setIsProcessingPaymentSubmit(true);
     setTimeout(() => {
       setIsProcessingPaymentSubmit(false);
@@ -246,7 +224,7 @@ export function Chat() {
         ...prevMessages,
         {
           role: "assistant",
-          content: "Your reservation is confirmed. Would you like to add it to your calendar?",
+          content: `Payment successful${usedLoyaltyPoints ? " with loyalty discount" : ""}! Your reservation is confirmed. Would you like to add it to your calendar?`,
           type: "calendar",
         },
       ]);
@@ -343,8 +321,7 @@ export function Chat() {
                     roomType={selectedRoom}
                   />
                 )}
-                {message.type === "loyalty" && showLoyalty && <LoyaltyPoints onApplyPoints={handleApplyPoints} />}
-                {message.type === "payment" && showPayment && <Payment onPaymentComplete={handlePaymentComplete} />}
+                {message.type === "payment-with-loyalty" && showPayment && <PaymentWithLoyalty onComplete={handlePaymentComplete} />}
                 {message.type === "calendar" && showCalendar && !calendarLoading && (
                   <Calendar
                     onAdd={() => {
@@ -383,9 +360,6 @@ export function Chat() {
         )}
         {isProcessingAuth && (
           <BotLoader message="Verifying your authorization..." />
-        )}
-        {isProcessingLoyalty && (
-          <BotLoader message="Applying loyalty points..." />
         )}
         {isProcessingPayment && (
           <BotLoader message="Processing payment..." />

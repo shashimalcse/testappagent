@@ -16,6 +16,7 @@ import { signOut } from "next-auth/react"
 import { UpgradeRoom } from "./upgrade-room"
 import { ScheduleTask } from "./schedule-task"
 import { BotLoader } from "./bot-loader"
+import { set } from "date-fns"
 
 interface Message {
   role: "user" | "assistant"
@@ -324,6 +325,14 @@ export function Chat() {
                 {message.type === "calendar" && showCalendar && !calendarLoading && (
                   <Calendar
                     onGoogleAuth={() => {
+                      setMessages((prevMessages) => [
+                        ...prevMessages,
+                        {
+                          role: "assistant",
+                          content: `I have added your reservation to your Google Calendar.`,
+                          type: "auth",
+                        },
+                      ]);
                       setCalendarLoading(true);
                       setTimeout(() => {
                         setCalendarLoading(false);

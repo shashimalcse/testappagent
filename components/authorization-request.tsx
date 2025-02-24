@@ -38,7 +38,7 @@ export function AuthorizationRequest({ roomType, onAuthorize }: AuthorizationReq
       </CardContent>
       <CardFooter className="flex justify-between">
         <Button variant="outline">Cancel</Button>
-        <Button onClick={() => onAuthorize(useLoyaltyPoints)}>Confirm Booking</Button>
+        <Button onClick={() => onAuthorize(useLoyaltyPoints)}>Process Booking</Button>
       </CardFooter>
     </Card>
   )

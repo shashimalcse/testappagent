@@ -14,7 +14,7 @@ export function Calendar({ onSkip, onGoogleAuth }: CalendarProps) {
         <CardTitle>Add to Calendar</CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="mb-4">To add this reservation to your calendar, you'll need to connect your Google Calendar account first.</p>
+        <p className="mb-4">To add this reservation to your calendar, you will need to connect your Google Calendar account first.</p>
       </CardContent>
       <CardFooter className="flex justify-between">
         <Button variant="outline" onClick={onSkip}>Skip</Button>

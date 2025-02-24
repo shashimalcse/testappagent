@@ -197,7 +197,7 @@ export function Chat() {
     }, 1500);
   };
 
-  const handleAuthorization = () => {
+  const handleAuthorization = (useLoyaltyPoints: boolean) => {
     setIsProcessingAuth(true);
     setTimeout(() => {
       setIsProcessingAuth(false);
@@ -207,7 +207,7 @@ export function Chat() {
         ...prevMessages,
         {
           role: "assistant",
-          content: "Your booking is authorized. Please proceed with payment:",
+          content: `Your booking is authorized${useLoyaltyPoints ? " with loyalty discount" : ""}. Please proceed with payment:`,
           type: "payment-with-loyalty",
         },
       ])
@@ -262,7 +262,7 @@ export function Chat() {
         ...prevMessages,
         {
           role: "assistant",
-          content: "Task scheduled! I'll notify you when a better room becomes available. You can continue with your current booking meanwhile.",
+          content: "Task scheduled! I'll notify you by email when a better room becomes available. You can continue with your current booking meanwhile.",
         },
       ]);
     }, 2000);
@@ -324,7 +324,7 @@ export function Chat() {
                 {message.type === "payment-with-loyalty" && showPayment && <PaymentWithLoyalty onComplete={handlePaymentComplete} />}
                 {message.type === "calendar" && showCalendar && !calendarLoading && (
                   <Calendar
-                    onAdd={() => {
+                    onGoogleAuth={() => {
                       setCalendarLoading(true);
                       setTimeout(() => {
                         setCalendarLoading(false);

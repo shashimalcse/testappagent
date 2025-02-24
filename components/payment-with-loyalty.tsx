@@ -1,56 +1,71 @@
-"use client"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Switch } from "@/components/ui/switch"
-import { useState } from "react"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
-export function PaymentWithLoyalty({
-  onComplete
-}: {
-  onComplete: (useLoyaltyPoints: boolean) => void;
-}) {
-  const [useLoyaltyPoints, setUseLoyaltyPoints] = useState(false)
+interface PaymentWithLoyaltyProps {
+  onComplete: (usedLoyaltyPoints: boolean) => void
+}
+
+export function PaymentWithLoyalty({ onComplete }: PaymentWithLoyaltyProps) {
+  const bookingDetails = {
+    roomType: "Deluxe Room",
+    checkIn: "2024-02-20",
+    checkOut: "2024-02-22",
+    nights: 2,
+    basePrice: 200,
+    tax: 40,
+    total: 240
+  }
 
   return (
-    <Card className="w-full max-w-md mt-2">
+    <Card className="w-full max-w-md mt-4">
       <CardHeader>
-        <CardTitle>Complete Your Booking</CardTitle>
-        <CardDescription>Review and confirm your payment</CardDescription>
+        <CardTitle>Booking Summary</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <p>Apply Loyalty Points</p>
-            <p className="text-sm text-muted-foreground">Use 1000 points to get 10% off</p>
-          </div>
-          <Switch
-            checked={useLoyaltyPoints}
-            onCheckedChange={setUseLoyaltyPoints}
-          />
-        </div>
+      <CardContent>
         <div className="space-y-4">
           <div className="flex justify-between">
-            <span>Subtotal</span>
-            <span>$200.00</span>
+            <span className="font-medium">Room Type</span>
+            <span>{bookingDetails.roomType}</span>
           </div>
-          {useLoyaltyPoints && (
-            <div className="flex justify-between text-green-600">
-              <span>Loyalty Discount</span>
-              <span>-$20.00</span>
+          <div className="flex justify-between">
+            <span className="font-medium">Check-in</span>
+            <span>{bookingDetails.checkIn}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="font-medium">Check-out</span>
+            <span>{bookingDetails.checkOut}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="font-medium">Number of Nights</span>
+            <span>{bookingDetails.nights}</span>
+          </div>
+          <div className="border-t pt-4 mt-4">
+            <div className="flex justify-between">
+              <span>Base Price</span>
+              <span>${bookingDetails.basePrice}</span>
             </div>
-          )}
-          <div className="flex justify-between font-bold">
-            <span>Total</span>
-            <span>{useLoyaltyPoints ? "$180.00" : "$200.00"}</span>
+            <div className="flex justify-between mt-2">
+              <span>Tax</span>
+              <span>${bookingDetails.tax}</span>
+            </div>
+            <div className="flex justify-between mt-2 font-bold">
+              <span>Total</span>
+              <span>${bookingDetails.total}</span>
+            </div>
           </div>
         </div>
+      </CardContent>
+      <CardFooter>
         <Button 
           className="w-full" 
-          onClick={() => onComplete(useLoyaltyPoints)}
+          onClick={() => {
+            // Simulate redirect to payment gateway
+            onComplete(false)
+          }}
         >
-          Pay Now
+          Proceed to Payment Gateway
         </Button>
-      </CardContent>
+      </CardFooter>
     </Card>
   )
 }

@@ -24,7 +24,7 @@ export function HotelRooms({ onBook }: HotelRoomsProps) {
             <p className="font-bold mt-2">${room.price} / night</p>
           </CardContent>
           <CardFooter>
-            <Button onClick={() => onBook(room.type)}>Book Now</Button>
+            <Button onClick={() => onBook(room.type)}>Select</Button>
           </CardFooter>
         </Card>
       ))}

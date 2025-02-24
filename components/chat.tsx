@@ -77,7 +77,6 @@ export function Chat() {
   // Check for returning from auth
   useEffect(() => {
     if (getAuthState()) {
-      handleAuthorization()
       clearAuthState()
     }
   }, [])
